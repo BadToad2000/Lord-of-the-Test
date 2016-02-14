@@ -687,6 +687,7 @@ function lottmapgen_beechtree(x, y, z, area, data)
 	for k = -2, 2 do
 		local absi = math.abs(i)
 		local absk = math.abs(k)
+		local j = 0
 		if absi >= absk then
 			j = t - absi
 		else
