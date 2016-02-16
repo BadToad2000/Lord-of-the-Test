@@ -386,8 +386,8 @@ function lottmapgen_mallornsmalltree(x, y, z, area, data)
 		if j == 11 or j == 15 then
 			for i = -2, 2 do
 			for k = -2, 2 do
-				local vil = area:index(x + i, y + j + math.random(0, 1), z + k)
 				if math.random(5) ~= 2 then
+					local vil = area:index(x + i, y + j + math.random(0, 1), z + k)
 					data[vil] = c_mallornleaf
 				end
 			end

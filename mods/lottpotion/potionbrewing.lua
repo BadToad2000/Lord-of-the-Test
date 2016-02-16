@@ -56,6 +56,26 @@ minetest.register_craft({
 	}
 })
 
+minetest.register_node("lottpotion:potion_brewer_spawner", {
+	description = "P_LBS",
+	tiles = {"lottblocks_door_birch_b.png"},
+	is_ground_content = false,
+	groups = {oddly_breakable_by_hand = 1, not_in_creative_inventory=1},
+})
+
+minetest.register_abm({
+        nodenames = {"lottpotion:potion_brewer_spawner"},
+        interval = 3,
+        chance = 1,
+        action = function(pos, node, active_object_count, active_object_count_wider)
+                -- local x = pos.x
+                -- local y = pos.y
+                -- local z = pos.z
+                -- local here = {x=x,y=y,z=z}
+                minetest.set_node(pos, {name="lottpotion:potion_brewer"})
+        end,
+})
+
 lottpotion.potion_recipes = { cooking = { input_size = 1, output_size = 1 } }
 function lottpotion.register_recipe_type(typename, origdata)
 	local data = {}
@@ -102,6 +122,7 @@ function lottpotion.register_recipe(typename, data)
 end
 
 function lottpotion.get_potion_recipe(typename, items)
+	if items == nil then return nil end
 	if typename == "cooking" then -- Already builtin in Minetest, so use that
 		local result, new_input = minetest.get_craft_result({
 			method = "cooking",

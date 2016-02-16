@@ -47,7 +47,25 @@ lottpotion.make_pipe = function( pipes, horizontal )
 end
 
 
+minetest.register_node("lottpotion:brewer_spawner", {
+	description = "P_BS",
+	tiles = {"lottblocks_door_birch_b.png"},
+	is_ground_content = false,
+	groups = {oddly_breakable_by_hand = 1, not_in_creative_inventory=1},
+})
 
+minetest.register_abm({
+        nodenames = {"lottpotion:brewer_spawner"},
+        interval = 3,
+        chance = 1,
+        action = function(pos, node, active_object_count, active_object_count_wider)
+                -- local x = pos.x
+                -- local y = pos.y
+                -- local z = pos.z
+                -- local here = {x=x,y=y,z=z}
+                minetest.set_node(pos, {name="lottpotion:brewer"})
+        end,
+})
 
 minetest.register_craft({
 	output = 'lottpotion:brewer',
@@ -70,10 +88,12 @@ end
 
 local function get_recipe_index(items)
 	local l = {}
-	for i, stack in ipairs(items) do
-		l[i] = ItemStack(stack):get_name()
+	if items ~= nil then
+		for i, stack in ipairs(items) do
+			l[i] = ItemStack(stack):get_name()
+		end
+		table.sort(l)
 	end
-	table.sort(l)
 	return table.concat(l, "/")
 end
 

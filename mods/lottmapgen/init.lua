@@ -88,10 +88,89 @@ local np_random = {
 -- Stuff
 lottmapgen = {}
 local mapgen_params = minetest.get_mapgen_params()
+local wl = mapgen_params.water_level
 
 dofile(minetest.get_modpath("lottmapgen").."/nodes.lua")
 dofile(minetest.get_modpath("lottmapgen").."/functions.lua")
 
+local use_register_biome = true
+if use_register_biome then
+		local replace_item_strings = {
+			["lottblocks:elfloth_chest"] = "lottmapgen:elfloth_chest_spawner",
+			["lottblocks:elfmirk_chest"] = "lottmapgen:elfmirk_chest_spawner",
+			["lottblocks:hobbit_chest"] = "lottmapgen:hobbit_chest_spawner",
+			["lottblocks:gondor_chest"] = "lottmapgen:gondor_chest_spawner",
+			["lottblocks:gondor_chest"] = "lottmapgen:gondor_chest_spawner",
+			["lottblocks:rohan_chest"] = "lottmapgen:rohan_chest_spawner",
+			["lottblocks:rohan_chest"] = "lottmapgen:rohan_chest_spawner",
+			["lottblocks:mordor_chest"] = "lottmapgen:mordor_chest_spawner",
+			["lottblocks:angmar_chest"] = "lottmapgen:angmar_chest_spawner",
+			["lottpotion:brewer"] = "lottpotion:brewer_spawner",
+			["lottpotion:potion_brewer"] = "lottpotion:potion_brewer_spawner",
+		}
+		local replace_item_cid, item_filter, needs_replacement = {}, {}, {}
+		local build_lists = true
+	-- On generated function
+	minetest.register_on_generated(function(minp, maxp, seed)
+		if maxp.y < mapgen_params.water_level or minp.y > 5000 then
+			return
+		end
+
+		local t1 = os.clock()
+
+		local vm, emin, emax = minetest.get_mapgen_object("voxelmanip")
+		local area = VoxelArea:new{MinEdge=emin, MaxEdge=emax}
+		local data = vm:get_data()
+
+		if build_lists then
+			for old, new in pairs(replace_item_strings) do
+				local old_cid = minetest.get_content_id(old)
+				replace_item_cid[old_cid] = minetest.get_content_id(new)
+				table.insert(item_filter, old)
+				needs_replacement[old_cid] = true
+			end
+			build_lists = false
+		end
+		local p1, p2 = minp, maxp
+		p1.y = math.min(math.max(p1.y, wl), 5000)
+		p2.y = math.min(math.max(p2.y, wl), 5000)
+		if false then
+			local gen_item = minetest.find_nodes_in_area(p1, p2, item_filter)
+			if gen_item ~= nil then
+				for i, v in ipairs(gen_item) do
+					local vi = area:index(v.x,v.y,v.z)
+minetest.log("action", data[vi].." list replaced at: "..v.x..", "..v.z)
+					data[vi] = replace_item_cid[data[vi]]
+				end
+			end
+		else
+			local x1 = p2.x
+			local y1 = p2.y
+			local z1 = p2.z
+			local x0 = p1.x
+			local y0 = p1.y
+			local z0 = p1.z
+			for x = x0, x1 do
+				for y = y0, y1 do
+					for z = z0, z1 do
+						local vi = area:index(x,y,z)
+						if needs_replacement[data[vi]] then
+minetest.log("action", data[vi].." x,y,z replaced at: "..x..", "..z)
+							data[vi] = replace_item_cid[data[vi]]
+						end
+					end
+				end
+			end
+		end
+
+		vm:set_data(data)
+		vm:set_lighting({day=0, night=0})
+		vm:calc_lighting()
+		vm:write_to_map(data)
+		local chugent = math.ceil((os.clock() - t1) * 1000)
+minetest.log("action", "lottmapgen took: " .. chugent .. "ms")
+	end)
+else
 -- On generated function
 minetest.register_on_generated(function(minp, maxp, seed)
 	if minp.y < (mapgen_params.water_level-1000) or minp.y > 5000 then
@@ -511,8 +590,366 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	vm:calc_lighting()
 	vm:write_to_map(data)
 	local chugent = math.ceil((os.clock() - t1) * 1000)
+	minetest.log("action", "lottmapgen took: " .. chugent .. "ms")
 end)
+end
 
 dofile(minetest.get_modpath("lottmapgen").."/schematics.lua")
 dofile(minetest.get_modpath("lottmapgen").."/deco.lua")
 dofile(minetest.get_modpath("lottmapgen").."/chests.lua")
+
+
+--
+-- Aliases for map generator outputs
+--
+
+minetest.register_alias("mapgen_stone", "default:stone")
+minetest.register_alias("mapgen_dirt", "default:dirt")
+minetest.register_alias("mapgen_dirt_with_grass", "default:dirt_with_grass")
+minetest.register_alias("mapgen_sand", "default:sand")
+minetest.register_alias("mapgen_water_source", "default:water_source")
+minetest.register_alias("mapgen_river_water_source", "default:river_water_source")
+minetest.register_alias("mapgen_lava_source", "default:lava_source")
+minetest.register_alias("mapgen_gravel", "default:gravel")
+minetest.register_alias("mapgen_desert_stone", "default:desert_stone")
+minetest.register_alias("mapgen_desert_sand", "default:desert_sand")
+minetest.register_alias("mapgen_dirt_with_snow", "default:dirt_with_snow")
+minetest.register_alias("mapgen_snowblock", "default:snowblock")
+minetest.register_alias("mapgen_snow", "default:snow")
+minetest.register_alias("mapgen_ice", "default:ice")
+minetest.register_alias("mapgen_sandstone", "default:sandstone")
+
+-- Flora
+
+minetest.register_alias("mapgen_tree", "default:tree")
+minetest.register_alias("mapgen_leaves", "default:leaves")
+minetest.register_alias("mapgen_apple", "default:apple")
+minetest.register_alias("mapgen_jungletree", "default:jungletree")
+minetest.register_alias("mapgen_jungleleaves", "default:jungleleaves")
+minetest.register_alias("mapgen_junglegrass", "default:junglegrass")
+minetest.register_alias("mapgen_pine_tree", "default:pine_tree")
+minetest.register_alias("mapgen_pine_needles", "default:pine_needles")
+
+-- Dungeons
+
+minetest.register_alias("mapgen_cobble", "default:cobble")
+minetest.register_alias("mapgen_stair_cobble", "stairs:stair_cobble")
+minetest.register_alias("mapgen_mossycobble", "default:mossycobble")
+minetest.register_alias("mapgen_sandstonebrick", "default:sandstonebrick")
+minetest.register_alias("mapgen_stair_sandstonebrick", "stairs:stair_sandstonebrick")
+
+if use_register_biome then
+	local wl = mapgen_params.water_level
+
+	minetest.register_biome({
+		name = "glacier",
+		node_dust = "default:snow",
+		node_top = "default:snowblock",
+		depth_top = 1,
+		node_filler = "default:snowblock",
+		-- depth_filler = 3,
+		-- node_stone = "default:ice",
+		node_water_top = "default:ice",
+		depth_water_top = 4,
+		node_water = "default:water_source",
+		node_river_water = "default:river_water_source",
+		y_min = wl+4,
+		y_max = 31000,
+		heat_point = 5,
+		humidity_point = 50,
+	})
+
+	-- Lorien
+	minetest.register_biome({
+		name = "lorien",
+		--node_dust = "default:snow",
+		node_top = "lottmapgen:lorien_grass",
+		depth_top = 1,
+		node_filler = "default:dirt",
+		depth_filler = 2,
+		-- node_stone = "default:ice",
+		-- node_water_top = "default:water_source",
+		-- depth_water_top = 4,
+		node_water = "default:water_source",
+		node_river_water = "default:river_water_source",
+		y_min = wl+4,
+		y_max = 31000,
+		heat_point = 45,
+		humidity_point = 90,
+	})
+
+	local tg_xz, tg_y = 3, 10
+	local tg_trk = math.floor((tg_xz + 1) / 2)
+	local tg_offset = 0
+	local mallorn_young_tree = {}
+	for i = 1, tg_xz do
+		for j = 1, tg_y do
+			for k = 1, tg_xz do
+				mallorn_young_tree[tg_offset+k] = { name = "air", prob = 0 }
+			end
+			if j>=tg_y-3 then  -- leaves
+				for k = 1, tg_xz do
+					if i==0 or k==0 then
+						mallorn_young_tree[tg_offset+k] = { name = "lottplants:mallornleaf", prob = 122 }
+					else
+						mallorn_young_tree[tg_offset+k] = { name = "lottplants:mallornleaf", prob = 117 }
+					end
+				end
+			end
+			if i==tg_trk and j < tg_y then
+				mallorn_young_tree[tg_offset+tg_trk] = { name = "lottplants:mallorntree_young", force_place = (j ~= 1) } -- trunk
+			end
+			tg_offset = tg_offset + tg_xz
+		end
+	end
+
+        minetest.register_decoration({  -- lottmapgen_young_mallorn 1/TREE2 1/50 .02
+                deco_type = "schematic",
+                place_on = {"lottmapgen:lorien_grass"},
+                sidelen = 16,
+                fill_ratio = 0.02,
+                biomes = {"lorien"},
+                y_min = 1,
+                y_max = 31000,
+                schematic = {
+                        size = { x = tg_xz, y = tg_y, z = tg_xz},
+                        data = mallorn_young_tree,
+                },
+                flags = "place_center_x,place_center_z",
+		yslice_prob = {
+			{ypos=2, prob=128},
+		},
+                -- rotation = "random",
+        })
+
+	local tg_xz, tg_y = 5, 18
+	local tg_xy_factor = tg_xz * tg_y
+	local tg_trk = math.floor((tg_xz + 1) / 2)
+	local mallorn_small_tree = {}
+	local tg_offset = 0
+	for i = 1, tg_xz do
+		for j = 1, tg_y do
+			for k = 1, tg_xz do
+				mallorn_small_tree[tg_offset+k] = { name = "air", prob = 0 }
+			end
+			if j==11 or j==12 or j==15 or j==16 then  -- leaves
+				for k = 1,5 do
+					 mallorn_small_tree[tg_offset+k] = { name = "lottplants:mallornleaf", prob = 102 }
+				end
+			end
+			if i == tg_trk and j < tg_y then
+				mallorn_small_tree[tg_offset+tg_trk] = { name = "lottplants:mallorntree", force_place = true } -- trunk
+			end
+			tg_offset = tg_offset + tg_xz
+		end
+	end
+
+        minetest.register_decoration({  -- lottmapgen_mallornsmalltree 1/TREE3 1/100 .01
+                deco_type = "schematic",
+                -- place_on = {"default:dirt"},
+                place_on = {"lottmapgen:lorien_grass", "default:dirt"},
+                sidelen = 32,
+                fill_ratio = 0.01,
+                biomes = {"lorien"},
+                y_min = 1,
+                y_max = 31000,
+                schematic = {
+                        size = { x = tg_xz, y = tg_y, z = tg_xz},
+                        data = mallorn_small_tree,
+                },
+                flags = "place_center_x,place_center_z",
+                -- rotation = "random",
+        })
+
+	do
+		local tg_xz, tg_y = 8, 32
+        	local tg_t0, tg_t1 = math.floor((tg_xz + 1)/2), math.floor((tg_xz + 2)/2)
+		local mid = math.floor(tg_y/2)
+		local tg_offset = 0
+		local mallorn_tree = {}
+		for i = 1, tg_xz do
+			for j = 1, tg_y do
+				for k = 1, tg_xz do
+					mallorn_tree[tg_offset+k] = { name = "air", prob = 0 }
+				end
+				if j >= tg_y - 3 then  -- leaves
+					for k = 1, tg_xz do
+					 	mallorn_tree[tg_offset+k] = { name = "lottplants:mallornleaf", prob = 204 }
+					end
+				elseif j >= mid + 4 and j <= mid + 5 and i >= tg_t0 - 1 and i <= tg_t1 + 1 then
+					for k = tg_t0 - 1, tg_t1 + 1 do
+					 	mallorn_tree[tg_offset+k] = { name = "lottplants:mallornleaf", prob = 204 }
+					end
+				elseif j >= mid - 3 and j <= mid - 1 and i >= tg_t0 - 2 and i <= tg_t1 + 2 then
+					for k = tg_t0 - 2, tg_t1 + 2 do
+					 	mallorn_tree[tg_offset+k] = { name = "lottplants:mallornleaf", prob = 204 }
+					end
+				end
+				if i <= tg_t1 and i >= tg_t0 and j<tg_y then  -- trunk
+					for k = tg_t0, tg_t1 do
+						mallorn_tree[tg_offset+k] = { name = "lottplants:mallorntree", force_place = true }
+					end
+				end
+				if j == tg_y - 2 then  -- branches
+					if i == tg_t0 - 2 then
+						mallorn_tree[tg_offset+tg_t1] = { name = "lottplants:mallorntree"}
+					elseif i == tg_t0 - 1 then
+						mallorn_tree[tg_offset+tg_t1] = { name = "lottplants:mallorntree"}
+					elseif i == tg_t0 then
+						mallorn_tree[tg_offset+tg_t0-1] = { name = "lottplants:mallorntree"}
+						mallorn_tree[tg_offset+tg_t0-2] = { name = "lottplants:mallorntree"}
+					elseif i == tg_t1 then
+						mallorn_tree[tg_offset+tg_t1+1] = { name = "lottplants:mallorntree"}
+						mallorn_tree[tg_offset+tg_t1+2] = { name = "lottplants:mallorntree"}
+					elseif i == tg_t1 + 1 then
+						mallorn_tree[tg_offset+tg_t0] = { name = "lottplants:mallorntree"}
+					elseif i == tg_t1 + 2 then
+						mallorn_tree[tg_offset+tg_t0] = { name = "lottplants:mallorntree"}
+					end
+				elseif j == 1 then  -- roots
+					-- TODO: ROOTS - need to figure out how to do sunken decorations (more than one (2-4)block)
+					-- i == -1 and k == 1
+					-- i == 0 and k == -1
+					-- i == 1 and k == 2
+					-- i == 2 and k == 0 then
+					if i == tg_t0 - 1 then
+						mallorn_tree[tg_offset+tg_t1] = { name = "lottplants:mallorntree", force_place = true }
+					elseif i == tg_t0 then
+						mallorn_tree[tg_offset+tg_t0-1] = { name = "lottplants:mallorntree", force_place = true }
+					elseif i == tg_t1 then
+						mallorn_tree[tg_offset+tg_t1+1] = { name = "lottplants:mallorntree", force_place = true }
+					elseif i == tg_t1 + 1 then
+						mallorn_tree[tg_offset+tg_t0] = { name = "lottplants:mallorntree", force_place = true }
+					end
+				end
+				tg_offset = tg_offset + tg_xz
+			end
+		end
+
+        	minetest.register_decoration({  -- lottmapgen_mallornsmalltree 1/TREE5:1/300 (6 height variants)
+                	deco_type = "schematic",
+                	place_on = {"lottmapgen:lorien_grass", "default:dirt"},
+                	sidelen = 16,
+                	fill_ratio = 1/TREE5,
+                	biomes = {"lorien"},
+                	y_min = 1,
+                	y_max = 31000,
+                	schematic = {
+                        	size = { x = tg_xz, y = tg_y, z = tg_xz},
+                        	data = mallorn_tree,
+                	},
+                	flags = "place_center_x,place_center_z",
+			yslice_prob = {
+				{ypos=mid-6, prob=128},
+				{ypos=mid-7, prob=128},
+				{ypos=mid-8, prob=128},
+				{ypos=mid+6, prob=128},
+				{ypos=mid+7, prob=128},
+				{ypos=mid+8, prob=128},
+			},
+                	-- rotation = "random",
+        	})
+	end
+
+	-- lottmapgen_lorien_grass : 1/PLANT1 with 4 variants
+	for i = 1, 4 do
+		minetest.register_decoration({
+			deco_type = "simple",
+			place_on = {"lottmapgen:lorien_grass"},
+			sidelen = 16,
+			fill_ratio = 1/PLANT1/4,
+			biomes = {"lorien"},
+			y_min = 1,
+			y_max = 31000,
+			decoration = "lottplants:lorien_grass_"..i,
+                	rotation = "random",
+		})
+	end
+
+	-- lottmapgen_lorienplants : 1/PLANT4 with 3 variants
+	minetest.register_decoration({
+		deco_type = "simple",
+		place_on = {"lottmapgen:lorien_grass"},
+		sidelen = 16,
+		fill_ratio = 1/PLANT4/3,
+		biomes = {"lorien"},
+		y_min = 1,
+		y_max = 31000,
+		decoration = "lottplants:elanor",
+                rotation = "random",
+	})
+
+	minetest.register_decoration({
+		deco_type = "simple",
+		place_on = {"lottmapgen:lorien_grass"},
+		sidelen = 16,
+		fill_ratio = 1/PLANT4/3,
+		biomes = {"lorien"},
+		y_min = 1,
+		y_max = 31000,
+		decoration = "lottplants:lissuin",
+                rotation = "random",
+	})
+
+	minetest.register_decoration({
+		deco_type = "simple",
+		place_on = {"lottmapgen:lorien_grass"},
+		sidelen = 16,
+		fill_ratio = 1/PLANT4/3,
+		biomes = {"lorien"},
+		y_min = 1,
+		y_max = 31000,
+		decoration = "lottplants:niphredil",
+                rotation = "random",
+	})
+
+	-- c_malltre : 1/PLANT13/2
+        minetest.register_decoration({
+                deco_type = "schematic",
+                place_on = {"lottmapgen:lorien_grass", "default:dirt"},
+                sidelen = 16,
+                --fill_ratio = 1/PLANT13/2,
+                fill_ratio = 1/500,
+                biomes = {"lorien"},
+                y_min = 1,
+                y_max = 31000,
+                schematic = minetest.get_modpath("lottmapgen").."/schems/mallornhouse.mts",
+                flags = "place_center_x,place_center_z",
+                rotation = "random",
+		node_filler = "default:dirt",
+        })
+
+	-- c_lorhous : 1/PLANT13/2
+        minetest.register_decoration({
+                deco_type = "schematic",
+                place_on = {"lottmapgen:lorien_grass", "default:dirt"},
+                sidelen = 16,
+                --fill_ratio = 1/PLANT13/2,
+                fill_ratio = 1/500,
+                biomes = {"lorien"},
+                y_min = 1,
+                y_max = 31000,
+                schematic = minetest.get_modpath("lottmapgen").."/schems/lorienhouse.mts",
+                flags = "place_center_x,place_center_z",
+                rotation = "random",
+		node_filler = "default:dirt",
+        })
+
+	minetest.register_biome({
+		name = "glacier",
+		node_dust = "default:snow",
+		node_top = "default:snowblock",
+		depth_top = 1,
+		node_filler = "default:snowblock",
+		-- depth_filler = 3,
+		-- node_stone = "default:ice",
+		node_water_top = "default:ice",
+		depth_water_top = 4,
+		node_water = "default:ice",
+		node_river_water = "default:ice",
+		y_min = wl-4,
+		y_max = 31000,
+		heat_point = 5,
+		humidity_point = 50,
+	})
+end
