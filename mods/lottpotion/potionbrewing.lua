@@ -47,6 +47,22 @@ minetest.register_node("lottpotion:glass_bottle_seregon", {
 	sounds = default.node_sound_glass_defaults(),
 })
 
+minetest.register_node("lottpotion:potion_brewer_spawner", {
+	description = "P_LBS",
+	tiles = {"lottblocks_door_birch_b.png"},
+	is_ground_content = false,
+	groups = {oddly_breakable_by_hand = 1, not_in_creative_inventory=1},
+})
+
+minetest.register_abm({
+        nodenames = {"lottpotion:potion_brewer_spawner"},
+        interval = 3,
+        chance = 1,
+        action = function(pos, node, active_object_count, active_object_count_wider)
+                minetest.set_node(pos, {name="lottpotion:potion_brewer"})
+        end,
+})
+
 minetest.register_craft({
 	output = 'lottpotion:potion_brewer',
 	recipe = {

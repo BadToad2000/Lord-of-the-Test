@@ -88,13 +88,14 @@ local np_random = {
 -- Stuff
 lottmapgen = {}
 local mapgen_params = minetest.get_mapgen_params()
+local wl = mapgen_params.water_level
 
 dofile(minetest.get_modpath("lottmapgen").."/nodes.lua")
 dofile(minetest.get_modpath("lottmapgen").."/functions.lua")
 
 -- On generated function
 minetest.register_on_generated(function(minp, maxp, seed)
-	if minp.y < (mapgen_params.water_level-1000) or minp.y > 5000 then
+	if maxp.y < (mapgen_params.water_level-32) or minp.y > 5000 then
 		return
 	end
 
@@ -103,7 +104,7 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	local y1 = maxp.y
 	local z1 = maxp.z
 	local x0 = minp.x
-	local y0 = minp.y
+	local y0 = math.max(minp.y, wl - 32)  -- currently only changing nodes to a depth of 32
 	local z0 = minp.z
 
 	--print ("[lottmapgen_checking] chunk minp ("..x0.." "..y0.." "..z0..")")
@@ -190,32 +191,37 @@ minetest.register_on_generated(function(minp, maxp, seed)
 				biome = lottmapgen_biomes(biome, n_temp, n_humid, n_ran, LOTET, LOHUT, LORAN, HITET, HIHUT, HIRAN)
 			end
 
-			local sandy = (mapgen_params.water_level+2) + math.random(-1, 1) -- sandline
-			local sandmin = (mapgen_params.water_level-15) + math.random(-5, 0) -- lowest sand
+			local sandy = mapgen_params.water_level + math.random(1, 3) -- sandline
+			local sandmin = mapgen_params.water_level - math.random(15, 20) -- lowest sand
 			local open = true -- open to sky?
 			local solid = true -- solid node above?
 			local water = false -- water node above?
 			local surfy = y1 + 80 -- y of last surface detected
+			local get_biome_data = biome_blend
 			for y = y1, y0, -1 do -- working down each column for each node do
-				if biome_blend == true then
-					local offsetpos = {x = (x-x0) + offset + math.random(-offset, offset) + 1, z = (z - z0) + offset + math.random(-offset, offset) + 1}
-					n_temp = nvals_temp[offsetpos.z][offsetpos.x] -- select biome
-					n_humid = nvals_humid[offsetpos.z][offsetpos.x]
-					n_ran = nvals_random[offsetpos.z][offsetpos.x]
-					biome = lottmapgen_biomes(biome, n_temp, n_humid, n_ran, LOTET, LOHUT, LORAN, HITET, HIHUT, HIRAN)
-				end
-				local fimadep = math.floor(6 - y / 512) + math.random(0, 1)
 				local vi = area:index(x, y, z)
 				local nodid = data[vi]
-				local viuu = area:index(x, y - 2, z)
-				local nodiduu = data[viuu]
-				local via = area:index(x, y + 1, z)
-				local nodida = data[via]
-				if nodid == c_stone -- if stone
-				or nodid == c_stonecopper
-				or nodid == c_stoneiron
-				or nodid == c_stonecoal then
-					if y > mapgen_params.water_level-32 then
+				if nodid == c_air then
+					solid = false
+				else
+					if get_biome_data then
+						local offsetpos = {x = (x-x0) + offset + math.random(-offset, offset) + 1, z = (z - z0) + offset + math.random(-offset, offset) + 1}
+						n_temp = nvals_temp[offsetpos.z][offsetpos.x] -- select biome
+						n_humid = nvals_humid[offsetpos.z][offsetpos.x]
+						n_ran = nvals_random[offsetpos.z][offsetpos.x]
+						biome = lottmapgen_biomes(biome, n_temp, n_humid, n_ran, LOTET, LOHUT, LORAN, HITET, HIHUT, HIRAN)
+					end
+
+					if nodid == c_stone -- if stone
+					or nodid == c_stonecopper
+					or nodid == c_stoneiron
+					or nodid == c_stonecoal then
+						local fimadep = math.floor(6 - y / 512) + math.random(0, 1)
+						local viuu = area:index(x, y - 2, z)
+						local nodiduu = data[viuu]
+						local via = area:index(x, y + 1, z)
+						local nodida = data[via]
+
 						if biome == 4 or biome == 12 then
 							data[vi] = c_desertstone
 						elseif biome == 8 then
@@ -225,39 +231,40 @@ minetest.register_on_generated(function(minp, maxp, seed)
 								data[vi] = c_stoneiron
 							end
 						end
-					end
-					if not solid then -- if surface
-						surfy = y
-						if nodiduu ~= c_air and nodiduu ~= c_water and fimadep >= 1 then -- if supported by 2 stone nodes
-							if nodida == c_river_water or data[area:index(x + 1, y, z)] == c_river_water
-							or data[area:index(x, y, z + 1)] == c_river_water or data[area:index(x - 1, y, z)] == c_river_water
-							or data[area:index(x, y, z - 1)] == c_river_water then
-								if biome == 8 then
-									data[vi] = c_morstone
-								else
-									data[vi] = c_sand
-								end
-							elseif y <= sandy and y >= sandmin then -- sand
-								if biome ~= 8 then
-									if open and water and y == (mapgen_params.water_level-1) and biome > 4 and math.random(PAPCHA) == 2 then -- papyrus
-										lottmapgen_papyrus(x, (mapgen_params.water_level+1), z, area, data)
-										data[vi] = c_dirt
-									elseif math.abs(n_temp) < 0.05 and y == (mapgen_params.water_level-1) then -- clay
-										data[vi] = c_clay
-									elseif math.abs(n_temp) < 0.05 and y == (mapgen_params.water_level-5) then -- salt
-										data[vi] = c_salt
-									elseif math.abs(n_temp) < 0.05 and y == (mapgen_params.water_level-20) then -- pearl
-										data[vi] = c_pearl
+						if not solid then -- if surface
+							surfy = y
+							if nodiduu ~= c_air and nodiduu ~= c_water and fimadep >= 1 then -- if supported by 2 stone nodes
+								if nodida == c_river_water or data[area:index(x + 1, y, z)] == c_river_water
+								or data[area:index(x, y, z + 1)] == c_river_water or data[area:index(x - 1, y, z)] == c_river_water
+								or data[area:index(x, y, z - 1)] == c_river_water then
+									if biome == 8 then
+										data[vi] = c_morstone
 									else
 										data[vi] = c_sand
 									end
-								end
-								if open and y > (mapgen_params.water_level + 4) + math.random(0, 1) and math.random(DUGCHA) == 2 and biome ~= 8 and biome ~= 7 then -- dune grass
-									local vi = area:index(x, y + 1, z)
-										data[vi] = c_dryshrub
+								elseif y < sandmin then -- below the sand
+									-- Can't really see a reason for potentially changing ores to stone. Do nothing.
+									-- data[vi] = c_stone
+								elseif y <= sandy then -- sand
+									if biome ~= 8 then
+										local elevation = y - mapgen_params.water_level
+										data[vi] = c_sand
+										if open and water and elevation == -1 and biome > 4 and math.random(PAPCHA) == 2 then -- papyrus
+											lottmapgen_papyrus(x, (mapgen_params.water_level+1), z, area, data)
+											data[via] = c_dirt
+										elseif math.abs(n_temp) < 0.05 then
+											if elevation == -1 then -- clay
+												data[vi] = c_clay
+											elseif elevation == -5 then -- salt
+												data[vi] = c_salt
+											elseif elevation == -20 then -- pearl
+												data[vi] = c_pearl
+											end
+										end
+										if open and elevation > math.random(2, 3) and math.random(DUGCHA) == 2 and biome ~= 7 then -- dune grass
+											data[via] = c_dryshrub
+										end
 									end
-								elseif y <= sandmin then
-									data[vi] = c_stone
 								else -- above sandline
 									if biome == 1 then
 										if math.random(121) == 2 then
@@ -292,218 +299,217 @@ minetest.register_on_generated(function(minp, maxp, seed)
 									elseif biome == 13 then
 										data[vi] = c_shiregrass
 									end
-								if open then -- if open to sky then flora
-									local y = surfy + 1
-									local vi = area:index(x, y, z)
-									if biome == 1 then
-										if math.random(PLANT3) == 2 then
-											data[vi] = c_dryshrub
-										elseif math.random(TREE10) == 2 then
-											lottmapgen_beechtree(x, y, z, area, data)
-										elseif math.random(TREE7) == 3 then
-											lottmapgen_pinetree(x, y, z, area, data)
-										elseif math.random(TREE8) == 4 then
-											lottmapgen_firtree(x, y, z, area, data)
-										elseif math.random(PLANT6) == 2 then
-											data[vi] = c_seregon
-										elseif math.random(PLANT13) == 13 then
-											data[vi] = c_angfort
-										end
-									elseif biome == 2 then
-										data[vi] = c_snowblock
-									elseif biome == 3 then
-										if math.random(PLANT3) == 2 then
-											data[vi] = c_dryshrub
-										elseif math.random(TREE10) == 2 then
-											lottmapgen_beechtree(x, y, z, area, data)
-										elseif math.random(TREE4) == 3 then
-											lottmapgen_pinetree(x, y, z, area, data)
-										elseif math.random(TREE3) == 4 then
-											lottmapgen_firtree(x, y, z, area, data)
-										end
-									elseif biome == 4 then
-										if math.random(TREE5) == 2 then
-											lottmapgen_defaulttree(x, y, z, area, data)
-										elseif math.random(TREE7) == 3 then
-											lottmapgen_appletree(x, y, z, area, data)
-										elseif math.random (PLANT3) == 4 then
-											lottmapgen_grass(data, vi)
-										end
-									elseif biome == 5 then
-										if math.random(TREE7) == 2 then
-											lottmapgen_defaulttree(x, y, z, area, data)
-										elseif math.random(TREE8) == 6 then
-											lottmapgen_aldertree(x, y, z, area, data)
-										elseif math.random(TREE9) == 3 then
-											lottmapgen_appletree(x, y, z, area, data)
-										elseif math.random(TREE8) == 4 then
-											lottmapgen_plumtree(x, y, z, area, data)
-										elseif math.random(TREE10) == 9 then
-											lottmapgen_elmtree(x, y, z, area, data)
-										elseif math.random(PLANT13) == 10 then
-											lottmapgen_whitetree(x, y, z, area, data)
-										elseif math.random(PLANT3) == 5 then
-											lottmapgen_grass(data, vi)
-										elseif math.random(PLANT8) == 7 then
-											lottmapgen_farmingplants(data, vi)
-										elseif math.random(PLANT13) == 8 then
-											lottmapgen_farmingrareplants(data, vi)
-										elseif math.random(PLANT6) == 2 then
-											data[vi] = c_mallos
-										elseif math.random(PLANT13) == 13 then
-											data[vi] = c_gonfort
-										end
-									elseif biome == 6 then
-										if math.random(TREE3) == 2 then
-											lottmapgen_defaulttree(x, y, z, area, data)
-										elseif math.random(TREE6) == 6 then
-											lottmapgen_lebethrontree(x, y, z, area, data)
-										elseif math.random(TREE3) == 3 then
-											lottmapgen_appletree(x, y, z, area, data)
-										elseif math.random(TREE5) == 10 then
-											lottmapgen_culumaldatree(x, y, z, area, data)
-										elseif math.random(TREE5) == 4 then
-											lottmapgen_plumtree(x, y, z, area, data)
-										elseif math.random(TREE9) == 9 then
-											lottmapgen_elmtree(x, y, z, area, data)
-										elseif math.random(PLANT8) == 7 then
-											lottmapgen_farmingplants(data, vi)
-										elseif math.random(PLANT13) == 8 then
-											data[vi] = c_melon
-										elseif math.random(PLANT5) == 11 then
-											lottmapgen_ithildinplants(data, vi)
-										end
-									elseif biome == 7 then
-										if math.random(TREE3) == 2 then
-											lottmapgen_mallornsmalltree(x, y, z, area, data)
-										elseif math.random(TREE2) == 2 then
-											lottmapgen_young_mallorn(x, y, z, area, data)
-										elseif math.random(PLANT1) == 2 then
-											lottmapgen_lorien_grass(data, vi)
-										elseif math.random(TREE5) == 3 then
-											lottmapgen_mallorntree(x, y, z, area, data)
-										elseif math.random(PLANT4) == 11 then
-											lottmapgen_lorienplants(data, vi)
-										elseif math.random(PLANT13) == 13 then
-											if math.random(1, 2) == 1 then
-												data[vi] = c_malltre
-											else
-												data[vi] = c_lorhous
+									if open then -- if open to sky then flora
+										local y = surfy + 1
+										if biome == 1 then
+											if math.random(PLANT3) == 2 then
+												data[via] = c_dryshrub
+											elseif math.random(TREE10) == 2 then
+												lottmapgen_beechtree(x, y, z, area, data)
+											elseif math.random(TREE7) == 3 then
+												lottmapgen_pinetree(x, y, z, area, data)
+											elseif math.random(TREE8) == 4 then
+												lottmapgen_firtree(x, y, z, area, data)
+											elseif math.random(PLANT6) == 2 then
+												data[via] = c_seregon
+											elseif math.random(PLANT13) == 13 then
+												data[vi] = c_angfort
 											end
-										end
-									elseif biome == 8 then
-										if math.random(TREE10) == 2 then
-											lottmapgen_burnedtree(x, y, z, area, data)
-										elseif math.random(PLANT4) == 2 then
-											data[vi] = c_bomordor
-										elseif math.random(PLANT13) == 13 then
-											data[vi] = c_orcfort
-										end
-									elseif biome == 9 then
-										if math.random(TREE3) == 2 then
-											lottmapgen_defaulttree(x, y, z, area, data)
-										elseif math.random(TREE4) == 6 then
-											lottmapgen_rowantree(x, y, z, area, data)
-										elseif math.random(TREE4) == 3 then
-											lottmapgen_appletree(x, y, z, area, data)
-										elseif math.random(TREE5) == 10 then
-											lottmapgen_birchtree(x, y, z, area, data)
-										elseif math.random(TREE5) == 4 then
-											lottmapgen_plumtree(x, y, z, area, data)
-										elseif math.random(TREE7) == 9 then
-											lottmapgen_elmtree(x, y, z, area, data)
-										elseif math.random(TREE6) == 11 then
-											lottmapgen_oaktree(x, y, z, area, data)
-										elseif math.random(PLANT4) == 7 then
-											lottmapgen_farmingplants(data, vi)
-										elseif math.random(PLANT9) == 8 then
-											data[vi] = c_melon
-										end
-									elseif biome == 10 then
-										if math.random(TREE2) == 2 then
-											lottmapgen_mirktree(x, y, z, area, data)
-										elseif math.random(TREE2) == 3 then
-											lottmapgen_jungletree2(x, y, z, area, data)
-										elseif math.random(PLANT13) == 13 then
-											data[vi] = c_mirktre
-										end
-									elseif biome == 11 then
-										if math.random(TREE10) == 2 then
-											lottmapgen_beechtree(x, y, z, area, data)
-										elseif math.random(TREE4) == 3 then
-											lottmapgen_pinetree(x, y, z, area, data)
-										elseif math.random(TREE6) == 4 then
-											lottmapgen_firtree(x, y, z, area, data)
-										end
-									elseif biome == 12 then
-										if math.random(TREE7) == 2 then
-											lottmapgen_defaulttree(x, y, z, area, data)
-										elseif math.random(TREE7) == 3 then
-											lottmapgen_appletree(x, y, z, area, data)
-										elseif math.random(TREE8) == 4 then
-											lottmapgen_plumtree(x, y, z, area, data)
-										elseif math.random(TREE10) == 9 then
-											lottmapgen_elmtree(x, y, z, area, data)
-										elseif math.random(PLANT2) == 5 then
-											lottmapgen_grass(data, vi)
-										elseif math.random(PLANT8) == 6 then
-											lottmapgen_farmingplants(data, vi)
-										elseif math.random(PLANT13) == 7 then
-											data[vi] = c_melon
-										elseif math.random(PLANT6) == 2 then
-											data[vi] = c_pilinehtar
-										elseif math.random(PLANT13) == 13 then
-											data[vi] = c_rohfort
-										end
-									elseif biome == 13 then
-										if math.random(TREE7) == 2 then
-											lottmapgen_defaulttree(x, y, z, area, data)
-										elseif math.random(TREE7) == 3 then
-											lottmapgen_appletree(x, y, z, area, data)
-										elseif math.random(TREE7) == 4 then
-											lottmapgen_plumtree(x, y, z, area, data)
-										elseif math.random(TREE7) == 9 then
-											lottmapgen_oaktree(x, y, z, area, data)
-										elseif math.random(PLANT7) == 7 then
-											lottmapgen_farmingplants(data, vi)
-										elseif math.random(PLANT9) == 8 then
-											data[vi] = c_melon
-										elseif math.random(PLANT13) == 13 then
-											data[vi] = c_hobhole
+										elseif biome == 2 then
+											data[via] = c_snowblock
+										elseif biome == 3 then
+											if math.random(PLANT3) == 2 then
+												data[via] = c_dryshrub
+											elseif math.random(TREE10) == 2 then
+												lottmapgen_beechtree(x, y, z, area, data)
+											elseif math.random(TREE4) == 3 then
+												lottmapgen_pinetree(x, y, z, area, data)
+											elseif math.random(TREE3) == 4 then
+												lottmapgen_firtree(x, y, z, area, data)
+											end
+										elseif biome == 4 then
+											if math.random(TREE5) == 2 then
+												lottmapgen_defaulttree(x, y, z, area, data)
+											elseif math.random(TREE7) == 3 then
+												lottmapgen_appletree(x, y, z, area, data)
+											elseif math.random (PLANT3) == 4 then
+												lottmapgen_grass(data, via)
+											end
+										elseif biome == 5 then
+											if math.random(TREE7) == 2 then
+												lottmapgen_defaulttree(x, y, z, area, data)
+											elseif math.random(TREE8) == 6 then
+												lottmapgen_aldertree(x, y, z, area, data)
+											elseif math.random(TREE9) == 3 then
+												lottmapgen_appletree(x, y, z, area, data)
+											elseif math.random(TREE8) == 4 then
+												lottmapgen_plumtree(x, y, z, area, data)
+											elseif math.random(TREE10) == 9 then
+												lottmapgen_elmtree(x, y, z, area, data)
+											elseif math.random(PLANT13) == 10 then
+												lottmapgen_whitetree(x, y, z, area, data)
+											elseif math.random(PLANT3) == 5 then
+												lottmapgen_grass(data, via)
+											elseif math.random(PLANT8) == 7 then
+												lottmapgen_farmingplants(data, via)
+											elseif math.random(PLANT13) == 8 then
+												lottmapgen_farmingrareplants(data, via)
+											elseif math.random(PLANT6) == 2 then
+												data[via] = c_mallos
+											elseif math.random(PLANT13) == 13 then
+												data[vi] = c_gonfort
+											end
+										elseif biome == 6 then
+											if math.random(TREE3) == 2 then
+												lottmapgen_defaulttree(x, y, z, area, data)
+											elseif math.random(TREE6) == 6 then
+												lottmapgen_lebethrontree(x, y, z, area, data)
+											elseif math.random(TREE3) == 3 then
+												lottmapgen_appletree(x, y, z, area, data)
+											elseif math.random(TREE5) == 10 then
+												lottmapgen_culumaldatree(x, y, z, area, data)
+											elseif math.random(TREE5) == 4 then
+												lottmapgen_plumtree(x, y, z, area, data)
+											elseif math.random(TREE9) == 9 then
+												lottmapgen_elmtree(x, y, z, area, data)
+											elseif math.random(PLANT8) == 7 then
+												lottmapgen_farmingplants(data, via)
+											elseif math.random(PLANT13) == 8 then
+												data[via] = c_melon
+											elseif math.random(PLANT5) == 11 then
+												lottmapgen_ithildinplants(data, via)
+											end
+										elseif biome == 7 then
+											if math.random(TREE3) == 2 then
+												lottmapgen_mallornsmalltree(x, y, z, area, data)
+											elseif math.random(TREE2) == 2 then
+												lottmapgen_young_mallorn(x, y, z, area, data)
+											elseif math.random(PLANT1) == 2 then
+												lottmapgen_lorien_grass(data, via)
+											elseif math.random(TREE5) == 3 then
+												lottmapgen_mallorntree(x, y, z, area, data)
+											elseif math.random(PLANT4) == 11 then
+												lottmapgen_lorienplants(data, via)
+											elseif math.random(PLANT13) == 13 then
+												if math.random(1, 2) == 1 then
+													data[vi] = c_malltre
+												else
+													data[vi] = c_lorhous
+												end
+											end
+										elseif biome == 8 then
+											if math.random(TREE10) == 2 then
+												lottmapgen_burnedtree(x, y, z, area, data)
+											elseif math.random(PLANT4) == 2 then
+												data[via] = c_bomordor
+											elseif math.random(PLANT13) == 13 then
+												data[vi] = c_orcfort
+											end
+										elseif biome == 9 then
+											if math.random(TREE3) == 2 then
+												lottmapgen_defaulttree(x, y, z, area, data)
+											elseif math.random(TREE4) == 6 then
+												lottmapgen_rowantree(x, y, z, area, data)
+											elseif math.random(TREE4) == 3 then
+												lottmapgen_appletree(x, y, z, area, data)
+											elseif math.random(TREE5) == 10 then
+												lottmapgen_birchtree(x, y, z, area, data)
+											elseif math.random(TREE5) == 4 then
+												lottmapgen_plumtree(x, y, z, area, data)
+											elseif math.random(TREE7) == 9 then
+												lottmapgen_elmtree(x, y, z, area, data)
+											elseif math.random(TREE6) == 11 then
+												lottmapgen_oaktree(x, y, z, area, data)
+											elseif math.random(PLANT4) == 7 then
+												lottmapgen_farmingplants(data, via)
+											elseif math.random(PLANT9) == 8 then
+												data[via] = c_melon
+											end
+										elseif biome == 10 then
+											if math.random(TREE2) == 2 then
+												lottmapgen_mirktree(x, y, z, area, data)
+											elseif math.random(TREE2) == 3 then
+												lottmapgen_jungletree2(x, y, z, area, data)
+											elseif math.random(PLANT13) == 13 then
+												data[vi] = c_mirktre
+											end
+										elseif biome == 11 then
+											if math.random(TREE10) == 2 then
+												lottmapgen_beechtree(x, y, z, area, data)
+											elseif math.random(TREE4) == 3 then
+												lottmapgen_pinetree(x, y, z, area, data)
+											elseif math.random(TREE6) == 4 then
+												lottmapgen_firtree(x, y, z, area, data)
+											end
+										elseif biome == 12 then
+											if math.random(TREE7) == 2 then
+												lottmapgen_defaulttree(x, y, z, area, data)
+											elseif math.random(TREE7) == 3 then
+												lottmapgen_appletree(x, y, z, area, data)
+											elseif math.random(TREE8) == 4 then
+												lottmapgen_plumtree(x, y, z, area, data)
+											elseif math.random(TREE10) == 9 then
+												lottmapgen_elmtree(x, y, z, area, data)
+											elseif math.random(PLANT2) == 5 then
+												lottmapgen_grass(data, via)
+											elseif math.random(PLANT8) == 6 then
+												lottmapgen_farmingplants(data, via)
+											elseif math.random(PLANT13) == 7 then
+												data[via] = c_melon
+											elseif math.random(PLANT6) == 2 then
+												data[via] = c_pilinehtar
+											elseif math.random(PLANT13) == 13 then
+												data[vi] = c_rohfort
+											end
+										elseif biome == 13 then
+											if math.random(TREE7) == 2 then
+												lottmapgen_defaulttree(x, y, z, area, data)
+											elseif math.random(TREE7) == 3 then
+												lottmapgen_appletree(x, y, z, area, data)
+											elseif math.random(TREE7) == 4 then
+												lottmapgen_plumtree(x, y, z, area, data)
+											elseif math.random(TREE7) == 9 then
+												lottmapgen_oaktree(x, y, z, area, data)
+											elseif math.random(PLANT7) == 7 then
+												lottmapgen_farmingplants(data, via)
+											elseif math.random(PLANT9) == 8 then
+												data[via] = c_melon
+											elseif math.random(PLANT13) == 13 then
+												data[vi] = c_hobhole
+											end
 										end
 									end
 								end
 							end
-						end
-					else -- underground
-						if nodiduu ~= c_air and nodiduu ~= c_water and surfy - y + 1 <= fimadep then
-							if y <= sandy and y >= sandmin then
-								if biome ~= 8 then
-									data[vi] = c_sand
+						else -- underground
+							if nodiduu ~= c_air and nodiduu ~= c_water and surfy - y + 1 <= fimadep then
+								if y <= sandy and y >= sandmin then
+									if biome ~= 8 then
+										data[vi] = c_sand
+									end
 								end
 							end
 						end
-					end
-				open = false
-				solid = true
-				elseif nodid == c_air or nodid == c_water or nodid == c_river_water then
-					solid = false
-					if nodid == c_water or nodid == c_river_water then
-						water = true
+						open = false
+						solid = true
+						get_biome_data = biome_blend
+					elseif nodid == c_water or nodid == c_river_water then
 						if biome == 8 then
 							if nodid == c_river_water then
 								data[vi] = c_morrivwat
 							else
 								data[vi] = c_morwat
 							end
-						end
-						if n_temp < ICETET and y >= mapgen_params.water_level - math.floor((ICETET - n_temp) * 10) then --ice
+						elseif n_temp < ICETET and y >= mapgen_params.water_level - math.floor((ICETET - n_temp) * 10) then --ice
 							data[vi] = c_ice
 						end
+						solid = false
+						water = true
+						get_biome_data = biome_blend
 					end
 				end
 			end
-		nixz = nixz + 1
+			nixz = nixz + 1
 		end
 	end
 	vm:set_data(data)
@@ -516,3 +522,191 @@ end)
 dofile(minetest.get_modpath("lottmapgen").."/schematics.lua")
 dofile(minetest.get_modpath("lottmapgen").."/deco.lua")
 dofile(minetest.get_modpath("lottmapgen").."/chests.lua")
+
+if true then
+	--
+	-- No biome uses default:dirt_with_grass, consider registering all biomes with that to indicate surface.
+	--
+	local angmar_t, angmar_h = 10, 10
+	local snowplains_t, snowplains_h = 10, 50
+	local trollshaws_t, trollshaws_h = 10, 90
+
+	local mordor_t, mordor_h = 50, 10
+	local middle_t, middle_h = 50, 50
+	local ithilien_t, ithilien_h = 50, 90
+
+	local lorien_t, lorien_h = 90, 10
+	local bottom_t, bottom_h = 90, 50
+	local fangorn_t, fangorn_h = 90, 90
+
+	-- Angmar
+	minetest.register_biome({
+		name = "angmar",
+		-- node_dust = "default:snow",
+		-- node_top = "default:dirt_with_snow",
+		-- node_top = "default:dirt_with_snow",
+		-- depth_top = 1,
+		node_filler = "default:dirt",
+		-- depth_filler = 1,
+		-- node_stone = "default:ice",
+		-- node_water_top = "default:ice",
+		-- depth_water_top = ice_depth,
+		-- node_water = "default:water_source",
+		-- node_river_water = "default:river_water_source",
+		y_min = wl+4,
+		y_max = 31000,
+		heat_point = angmar_t,
+		humidity_point = angmar_h,
+	})
+
+	-- Snowplains
+	minetest.register_biome({
+		name = "snowplains",
+		-- node_dust = "default:snow",
+		-- node_top = "default:dirt_with_snow",
+		-- depth_top = 1,
+		node_filler = "default:dirt",
+		-- depth_filler = 3,
+		-- node_stone = "default:ice",
+		-- node_water_top = "default:ice",
+		-- depth_water_top = ice_depth,
+		-- node_water = "default:water_source",
+		-- node_river_water = "default:river_water_source",
+		y_min = wl+4,
+		y_max = 31000,
+		heat_point = snowplains_t,
+		humidity_point = snowplains_h,
+	})
+
+	-- Trollshaws
+	minetest.register_biome({
+		name = "trollshaws",
+		-- node_dust = "default:snow",
+		-- node_top = "default:dirt_with_snow",
+		-- depth_top = 1,
+		node_filler = "default:dirt",
+		-- depth_filler = 3,
+		-- node_stone = "default:ice",
+		-- node_water_top = "default:ice",
+		-- depth_water_top = ice_depth,
+		-- node_water = "default:water_source",
+		-- node_river_water = "default:river_water_source",
+		y_min = wl+4,
+		y_max = 31000,
+		heat_point = trollshaws_t,
+		humidity_point = trollshaws_h,
+	})
+
+	-- Mordor
+	minetest.register_biome({
+		name = "mordor",
+		-- node_top = "lottmapgen:mordor_stone",
+		-- depth_top = 1,
+		node_filler = "lottmapgen:mordor_stone",
+		-- depth_filler = 1,
+		-- node_stone = "lottmapgen:mordor_stone",
+		-- node_water_top = "lottmapgen:blacksource",
+		-- depth_water_top = 4,
+		-- node_water = "lottmapgen:blacksource",
+		-- node_river_water = "lottmapgen:black_river_source",
+		y_min = wl + 4,
+		y_max = 31000,
+		heat_point = mordor_t,
+		humidity_point = mordor_h,
+	})
+
+	-- Gondor, Rohan, Shire
+	minetest.register_biome({
+		name = "gondor",
+		--node_dust = "default:snow",
+		-- node_top = "lottmapgen:gondor_grass",
+		-- depth_top = 1,
+		node_filler = "default:dirt",
+		-- depth_filler = 3,
+		-- node_stone = "default:ice",
+		node_water_top = "default:water",
+		-- depth_water_top = 4,
+		node_water = "default:water_source",
+		node_river_water = "default:river_water_source",
+		y_min = wl+4,
+		y_max = 31000,
+		heat_point = middle_t,
+		humidity_point = middle_h,
+	})
+
+	-- Ithilien
+	minetest.register_biome({
+		name = "ithilien",
+		--node_dust = "default:snow",
+		-- node_top = "lottmapgen:ithilien_grass",
+		-- depth_top = 1,
+		node_filler = "default:dirt",
+		-- depth_filler = 3,
+		-- node_stone = "default:ice",
+		node_water_top = "default:water",
+		-- depth_water_top = 4,
+		node_water = "default:water_source",
+		node_river_water = "default:river_water_source",
+		y_min = wl+4,
+		y_max = 31000,
+		heat_point = ithilien_t,
+		humidity_point = ithilien_h,
+	})
+
+	-- Lorien
+	minetest.register_biome({
+		name = "lorien",
+		--node_dust = "default:snow",
+		-- node_top = "lottmapgen:lorien_grass",
+		-- depth_top = 1,
+		node_filler = "default:dirt",
+		-- depth_filler = 3,
+		-- node_stone = "default:ice",
+		node_water_top = "default:water",
+		-- depth_water_top = 4,
+		node_water = "default:water_source",
+		node_river_water = "default:river_water_source",
+		y_min = wl+4,
+		y_max = 31000,
+		heat_point = lorien_t,
+		humidity_point = lorien_h,
+	})
+
+	-- Mirkwood, Ironhills, Dunlands
+	minetest.register_biome({
+		name = "mirkwood",
+		--node_dust = "default:snow",
+		-- node_top = "lottmapgen:mirkwood_grass",
+		-- depth_top = 1,
+		node_filler = "default:dirt",
+		-- depth_filler = 3,
+		-- node_stone = "default:ice",
+		node_water_top = "default:water",
+		-- depth_water_top = 4,
+		node_water = "default:water_source",
+		node_river_water = "default:river_water_source",
+		y_min = wl+4,
+		y_max = 31000,
+		heat_point = bottom_t,
+		humidity_point = bottom_h,
+	})
+
+	-- Fangorn
+	minetest.register_biome({
+		name = "fangorn",
+		--node_dust = "default:snow",
+		-- node_top = "lottmapgen:fangorn_grass",
+		-- depth_top = 1,
+		node_filler = "default:dirt",
+		-- depth_filler = 3,
+		-- node_stone = "default:ice",
+		node_water_top = "default:water",
+		-- depth_water_top = 4,
+		node_water = "default:water_source",
+		node_river_water = "default:river_water_source",
+		y_min = wl+4,
+		y_max = 31000,
+		heat_point = fangorn_t,
+		humidity_point = fangorn_h,
+	})
+end

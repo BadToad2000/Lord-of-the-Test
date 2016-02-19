@@ -25,6 +25,23 @@ minetest.register_node("lottother:mordorms", {
 	groups = {not_in_creative_inventory=1,dig_immediate=3},
 })
 
+minetest.register_abm({
+	nodenames = {"lottother:mordorms"},
+	interval = 3,
+	chance = 1,
+	action = function(pos, node, active_object_count, active_object_count_wider)
+		local mob_ran = math.random()
+		if mob_ran <= 0.25 then
+			minetest.add_entity({x = pos.x, y = pos.y+1, z = pos.z}, "lottmobs:orc")
+		elseif mob_ran <= 0.45 then  -- technically this should be 40% as 75%/5 is 15%
+			minetest.add_entity({x = pos.x, y = pos.y+1, z = pos.z}, "lottmobs:uruk_hai")
+		elseif mob_ran <= 0.54 then  -- if we followed the above comment then this should be 45%
+			minetest.add_entity({x = pos.x, y = pos.y+1, z = pos.z}, "lottmobs:battle_troll")
+		end
+		minetest.remove_node(pos)
+	end,
+})
+
 -- Rohan
 
 minetest.register_node("lottother:rohanms", {
@@ -45,6 +62,18 @@ minetest.register_node("lottother:rohanms", {
 		minetest.remove_node(pos)
 	end,
 	groups = {not_in_creative_inventory=1,dig_immediate=3},
+})
+
+minetest.register_abm({
+	nodenames = {"lottother:rohanms"},
+	interval = 3,
+	chance = 1,
+	action = function(pos, node, active_object_count, active_object_count_wider)
+		if math.random(1, 3) == 2 then
+			minetest.add_entity({x = pos.x, y = pos.y+1, z = pos.z}, "lottmobs:rohan_guard")
+		end
+		minetest.remove_node(pos)
+	end,
 })
 
 -- Elf
@@ -69,6 +98,18 @@ minetest.register_node("lottother:elfms", {
 	groups = {not_in_creative_inventory=1,dig_immediate=3},
 })
 
+minetest.register_abm({
+	nodenames = {"lottother:elfms"},
+	interval = 3,
+	chance = 1,
+	action = function(pos, node, active_object_count, active_object_count_wider)
+		if math.random(1, 2) == 2 then
+			minetest.add_entity({x = pos.x, y = pos.y+1, z = pos.z}, "lottmobs:elf")
+		end
+		minetest.remove_node(pos)
+	end,
+})
+
 --Hobbit
 
 minetest.register_node("lottother:hobbitms", {
@@ -89,6 +130,18 @@ minetest.register_node("lottother:hobbitms", {
 		minetest.remove_node(pos)
 	end,
 	groups = {not_in_creative_inventory=1,dig_immediate=3},
+})
+
+minetest.register_abm({
+	nodenames = {"lottother:hobbitms"},
+	interval = 3,
+	chance = 1,
+	action = function(pos, node, active_object_count, active_object_count_wider)
+		if math.random(1, 2) == 2 then
+			minetest.add_entity({x = pos.x, y = pos.y+1, z = pos.z}, "lottmobs:hobbit")
+		end
+		minetest.remove_node(pos)
+	end,
 })
 
 --Gondor
@@ -113,6 +166,18 @@ minetest.register_node("lottother:gondorms", {
 	groups = {not_in_creative_inventory=1,dig_immediate=3},
 })
 
+minetest.register_abm({
+	nodenames = {"lottother:gondorms"},
+	interval = 3,
+	chance = 1,
+	action = function(pos, node, active_object_count, active_object_count_wider)
+		if math.random(1, 3) == 2 then
+			minetest.add_entity({x = pos.x, y = pos.y+1, z = pos.z}, "lottmobs:gondor_guard")
+		end
+		minetest.remove_node(pos)
+	end,
+})
+
 --Angmar
 
 minetest.register_node("lottother:angmarms", {
@@ -133,6 +198,18 @@ minetest.register_node("lottother:angmarms", {
 		minetest.remove_node(pos)
 	end,
 	groups = {not_in_creative_inventory=1,dig_immediate=3},
+})
+
+minetest.register_abm({
+	nodenames = {"lottother:angmarms"},
+	interval = 3,
+	chance = 1,
+	action = function(pos, node, active_object_count, active_object_count_wider)
+		if math.random(1, 2) == 2 then
+			minetest.add_entity({x = pos.x, y = pos.y+1, z = pos.z}, "lottmobs:half_troll")
+		end
+		minetest.remove_node(pos)
+	end,
 })
 
 minetest.register_alias("lottother:gondorms_on", "lottother:gondorms")
