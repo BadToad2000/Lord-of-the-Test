@@ -1280,7 +1280,7 @@ return { { ["x"] = 0, ["meta"] = { ["fields"] = {}, ["inventory"] = {} }, ["para
 { ["x"] = 11, ["meta"] = { ["fields"] = {}, ["inventory"] = {} }, ["param2"] = 0, ["y"] = 8, ["param1"] = 153, ["z"] = 8, ["name"] = "lottother:air" },
 { ["x"] = 11, ["meta"] = { ["fields"] = {}, ["inventory"] = {} }, ["param2"] = 0, ["y"] = 8, ["param1"] = 0, ["z"] = 9, ["name"] = "lottmapgen:angmar_chest_spawner" },
 { ["x"] = 11, ["meta"] = { ["fields"] = {}, ["inventory"] = {} }, ["param2"] = 0, ["y"] = 8, ["param1"] = 0, ["z"] = 10, ["name"] = "lottmapgen:angmar_chest_spawner" },
-{ ["x"] = 11, ["meta"] = { ["fields"] = { ["src_totaltime"] = "0", ["formspec"] = "size[8,9]image[2,2;1,1;default_furnace_fire_bg.png]list[current_name;fuel;2,3;1,1;]list[current_name;src;2,1;1,1;]list[current_name;dst;5,1;2,2;]list[current_player;main;0,5;8,4;]", ["fuel_time"] = "0", ["fuel_totaltime"] = "0", ["src_time"] = "0", ["infotext"] = "Furnace out of fuel" }, ["inventory"] = { ["fuel"] = { "" }, ["dst"] = { "", "", "", "" }, ["src"] = { "" } } }, ["param2"] = 1, ["y"] = 8, ["param1"] = 0, ["z"] = 11, ["name"] = "default:furnace" },
+{ ["x"] = 11, ["meta"] = { ["fields"] = {}, ["inventory"] = {} }, ["param2"] = 1, ["y"] = 8, ["param1"] = 0, ["z"] = 11, ["name"] = "default:furnace_spawner" },
 { ["x"] = 11, ["meta"] = { ["fields"] = {}, ["inventory"] = {} }, ["param2"] = 0, ["y"] = 8, ["param1"] = 0, ["z"] = 12, ["name"] = "default:cobble" },
 { ["x"] = 11, ["meta"] = { ["fields"] = {}, ["inventory"] = {} }, ["param2"] = 0, ["y"] = 9, ["param1"] = 0, ["z"] = 6, ["name"] = "default:cobble" },
 { ["x"] = 11, ["meta"] = { ["fields"] = {}, ["inventory"] = {} }, ["param2"] = 2, ["y"] = 9, ["param1"] = 0, ["z"] = 7, ["name"] = "lottblocks:orc_torch" },
