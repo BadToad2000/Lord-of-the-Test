@@ -1618,9 +1618,17 @@ minetest.register_node("default:furnace_spawner", {
  
 minetest.register_abm({
         nodenames = {"default:furnace_spawner"},
-        interval = 3,
+        interval = 1,
         chance = 1,
         action = function(pos, node, active_object_count, active_object_count_wider)
-                minetest.set_node(pos, {name="default:furnace"})
+		local facedir = 0
+		if minetest.get_node({x=pos.x-1, y=pos.y, z=pos.z}).name == "air" then
+			facedir = 1
+		elseif minetest.get_node({x=pos.x, y=pos.y, z=pos.z+1}).name == "air" then
+			facedir = 2
+		elseif minetest.get_node({x=pos.x+1, y=pos.y, z=pos.z}).name == "air" then
+			facedir = 3
+		end
+                minetest.set_node(pos, {name="default:furnace", param2=facedir})
         end,
 })

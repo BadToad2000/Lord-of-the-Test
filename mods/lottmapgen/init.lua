@@ -24,6 +24,7 @@ local LORAN = -0.4
 local PAPCHA = 3 -- Papyrus
 local DUGCHA = 5 -- Dune grass
 local biome_blend = minetest.setting_getbool("biome_blend")
+local use_register_biome = minetest.setting_getbool("use_register_biome") and false
 
 --Rarity for Trees
 
@@ -93,6 +94,7 @@ local wl = mapgen_params.water_level
 dofile(minetest.get_modpath("lottmapgen").."/nodes.lua")
 dofile(minetest.get_modpath("lottmapgen").."/functions.lua")
 
+if not use_register_biome then
 -- On generated function
 minetest.register_on_generated(function(minp, maxp, seed)
 	if maxp.y < (mapgen_params.water_level-32) or minp.y > 5000 then
@@ -518,36 +520,58 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	vm:write_to_map(data)
 	local chugent = math.ceil((os.clock() - t1) * 1000)
 end)
+end  -- use_register_biome
 
 dofile(minetest.get_modpath("lottmapgen").."/schematics.lua")
 dofile(minetest.get_modpath("lottmapgen").."/deco.lua")
 dofile(minetest.get_modpath("lottmapgen").."/chests.lua")
 
-if true then
+if use_register_biome then
 	--
 	-- No biome uses default:dirt_with_grass, consider registering all biomes with that to indicate surface.
 	--
-	local angmar_t, angmar_h = 10, 10
-	local snowplains_t, snowplains_h = 10, 50
-	local trollshaws_t, trollshaws_h = 10, 90
+-- ice_tet = 10, 5, 0  so should be 12.5(not ice), 7.5, 2.5, -2.5
+-- clay, sand and pearl temp range is 47.5-52.5
+	local low_threshold, high_threshold = 30, 70
+	local non_ice_top, ice_step = 12.5, 5
+	local csp_t, non_csp_t1, non_csp_t2 = 50, 45, 55
 
-	local mordor_t, mordor_h = 50, 10
-	local middle_t, middle_h = 50, 50
-	local ithilien_t, ithilien_h = 50, 90
+	local angmar_t, angmar_h = non_ice_top, 10
+	local snowplains_t = non_ice_top
+	local trollshaws_t, trollshaws_h = non_ice_top, 90
 
-	local lorien_t, lorien_h = 90, 10
-	local bottom_t, bottom_h = 90, 50
-	local fangorn_t, fangorn_h = 90, 90
+	local rohan_t, rohan_h = 2 * low_threshold - snowplains_t, 50
+	local shire_t, shire_h = 2 * low_threshold - snowplains_t, 60
+	local gondor_t, gondor_h = 60, {math.min(shire_h, rohan_h), math.max(shire_h, rohan_h)}
+
+	local snowplains_h = gondor_h
+	local angmar_h = 2 * low_threshold - snowplains_h[1]
+	local trollshaws_h = 2 * high_threshold - snowplains_h[2]
+
+	-- Mirkwood, Ironhills, Dunlands
+	local ironhills_t, ironhills_h = 80, 40
+	local dunlands_t, dunlands_h = 80, 60
+	local mirkwood_t, mirkwood_h = 90, 50
+
+	local mordor_t1, mordor_h1 = rohan_t, 2 * low_threshold - rohan_h
+	local mordor_t2, mordor_h2 = gondor_t, 2 * low_threshold - gondor_h1
+	local ithilien_t = {shire_t, gondor_t}
+	local ithilien_h = {2 * high_threshold - shire_h, 2 * high_threshold - gondor_h2}
+
+	local lorien_t1, lorien_h1 = ironhills_t, 2 * low_threshold - ironhills_h
+	local lorien_t2, lorien_h2 = mirkwood_t, 2 * low_threshold - mirkwood_h
+	local fangorn_t1, fangorn_h1 = dunlands_t, 2 * high_threshold - dunlands_h
+	local fangorn_t2, fangorn_h2 = mirkwood_t, 2 * high_threshold - mirkwood_h
 
 	-- Angmar
 	minetest.register_biome({
 		name = "angmar",
-		-- node_dust = "default:snow",
+		node_dust = "default:snow",
+		node_top = "default:dirt_with_snow",
 		-- node_top = "default:dirt_with_snow",
-		-- node_top = "default:dirt_with_snow",
-		-- depth_top = 1,
+		depth_top = 1,
 		node_filler = "default:dirt",
-		-- depth_filler = 1,
+		depth_filler = 1,
 		-- node_stone = "default:ice",
 		-- node_water_top = "default:ice",
 		-- depth_water_top = ice_depth,
