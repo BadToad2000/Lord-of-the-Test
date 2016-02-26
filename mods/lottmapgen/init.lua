@@ -24,7 +24,7 @@ local LORAN = -0.4
 local PAPCHA = 3 -- Papyrus
 local DUGCHA = 5 -- Dune grass
 local biome_blend = minetest.setting_getbool("biome_blend")
-local use_register_biome = minetest.setting_getbool("use_register_biome") and false
+local use_register_biome = minetest.setting_getbool("use_register_biome") or true
 
 --Rarity for Trees
 
@@ -530,207 +530,213 @@ if use_register_biome then
 	--
 	-- No biome uses default:dirt_with_grass, consider registering all biomes with that to indicate surface.
 	--
--- ice_tet = 10, 5, 0  so should be 12.5(not ice), 7.5, 2.5, -2.5
--- clay, sand and pearl temp range is 47.5-52.5
-	local low_threshold, high_threshold = 30, 70
-	local non_ice_top, ice_step = 12.5, 5
-	local csp_t, non_csp_t1, non_csp_t2 = 50, 45, 55
+	local mb_t = {
+		-- -2.5, 2.5, 7.5, 12.5,              -- for ice depth
+		-- 15, 25, 35, 45, 55, 65, 75, 85, 95, 105 -- for micro biomes
+		20, 40, 55, 60, 80, 100 -- for micro biomes
+	}
+	-- local mb_h = { 5, 15, 25, 35, 45, 55, 65, 75, 85, 95, 105 }
+	local mb_h = { 20, 40, 50, 60, 80, 100 }
+	local biome_to_mb = {}
+	local mb_biome_tab = {
+		["angmar"] = { temp = 10, humid = 10,
+			top = "default:dirt_with_snow",
+			dust = "default:snow",
+			water_top = "default:ice",
+		},
+		["snowplains"] = { temp = 20, humid = 50,
+			top = "default:dirt_with_snow",
+			dust = "default:snow",
+			water_top = "default:ice",
+		},
+		["trollshaws"] = { temp = 10, humid = 90,
+			top = "default:dirt_with_snow",
+			dust = "default:snow",
+			water_top = "default:ice",
+		},
 
-	local angmar_t, angmar_h = non_ice_top, 10
-	local snowplains_t = non_ice_top
-	local trollshaws_t, trollshaws_h = non_ice_top, 90
+		["mordor"] = { temp = 50, humid = 30,
+			top = "lottmapgen:mordor_stone",
+			filler = "lottmapgen:mordor_stone",
+			stone = "lottmapgen:mordor_stone",
+			sand = "lottmapgen:mordor_stone",
+			water_top = "lottmapgen:blacksource",
+			water = "lottmapgen:blacksource",
+			river = "lottmapgen:black_river_source"
+		},
+		["shire"] = { temp = 40, humid = 50,
+			top = "lottmapgen:shire_grass"
+		},
+		["rohan"] = { temp = 50, humid = 50,
+			top = "lottmapgen:rohan_grass",
+			stone = "default:desert_stone"
+		},
+		["gondor"] = { temp = 60, humid = 50,
+			top = "lottmapgen:gondor_grass"
+		},
+		["ithilien"] = { temp = 50, humid = 90,
+			top = "lottmapgen:ithilien_grass"
+		},
 
-	local rohan_t, rohan_h = 2 * low_threshold - snowplains_t, 50
-	local shire_t, shire_h = 2 * low_threshold - snowplains_t, 60
-	local gondor_t, gondor_h = 60, {math.min(shire_h, rohan_h), math.max(shire_h, rohan_h)}
+		["lorien"] = { temp = 90, humid = 30,
+			top = "lottmapgen:lorien_grass"
+		},
+		["dunland"] = { temp = 80, humid = 60,
+			top = "lottmapgen:dunland_grass",
+			stone = "default:desert_stone"
+		},
+		["ironhills"] = { temp = 90, humid = 60,
+			top = "lottmapgen:ironhill_grass"
+		},
+		["mirkwood"] = { temp = 100, humid = 60,
+			top = "lottmapgen:mirkwood_grass"
+		},
+		["fangorn"] = { temp = 90, humid = 100,
+			top = "lottmapgen:fangorn_grass"
+		},
+	}
 
-	local snowplains_h = gondor_h
-	local angmar_h = 2 * low_threshold - snowplains_h[1]
-	local trollshaws_h = 2 * high_threshold - snowplains_h[2]
+	for biome_name, data in pairs(mb_biome_tab) do
+		-- local dust, top, filler, stone, sand = {}, "default:grass", "default:dirt", "default:stone", "default:sand"
+		-- local water_top, water, river, water_depth = "default:water_source", "default:water_source", "default:river_water_source", 1
+		local t = data.temp
+		local h = data.humid
+		local mb_name = biome_name.."_t"..t.."_h"..h
+		local mb_name_top, mb_name_sand, mb_name_bottom = mb_name.."_top", mb_name.."_sand", mb_name.."_bottom"
 
-	-- Mirkwood, Ironhills, Dunlands
-	local ironhills_t, ironhills_h = 80, 40
-	local dunlands_t, dunlands_h = 80, 60
-	local mirkwood_t, mirkwood_h = 90, 50
+		-- if data.dust then dust = data.dust end
+		-- if data.top then top = data.top end
+		-- if data.filler then filler = data.filler end
+		-- if data.stone then stone = data.stone end
+		-- if data.sand then sand = data.sand end
+		-- if data.water_top then water_top = data.water_top end
+		-- if data.water then water = data.water end
+		-- if data.river then river = data.river end
 
-	local mordor_t1, mordor_h1 = rohan_t, 2 * low_threshold - rohan_h
-	local mordor_t2, mordor_h2 = gondor_t, 2 * low_threshold - gondor_h1
-	local ithilien_t = {shire_t, gondor_t}
-	local ithilien_h = {2 * high_threshold - shire_h, 2 * high_threshold - gondor_h2}
+		local dust = not data.dust and nil or data.dust
+		local top = not data.top and "default:grass" or data.top
+		local filler = not data.filler and "default:dirt" or data.filler
+		local stone = not data.stone and "default:stone" or data.stone
+		local sand = not data.sand and "default:sand" or data.sand
+		local water_top = not data.water_top and "default:water_source" or data.water_top
+		local water_depth = not data.water_depth and 1 or data.water_depth
+		local water = not data.water and "default:water_source" or data.water
+		local river = not data.river and "default:river_water_source" or data.river
 
-	local lorien_t1, lorien_h1 = ironhills_t, 2 * low_threshold - ironhills_h
-	local lorien_t2, lorien_h2 = mirkwood_t, 2 * low_threshold - mirkwood_h
-	local fangorn_t1, fangorn_h1 = dunlands_t, 2 * high_threshold - dunlands_h
-	local fangorn_t2, fangorn_h2 = mirkwood_t, 2 * high_threshold - mirkwood_h
+			if not biome_to_mb[biome_name] then
+				biome_to_mb[biome_name] = { mb_name_top, mb_name_sand, mb_name_bottom }
+				-- biome_to_mb[biome_name][1] = mb_name
+			else
+				biome_to_mb[biome_name][#biome_to_mb[biome_name] + 1] = mb_name_top
+				biome_to_mb[biome_name][#biome_to_mb[biome_name] + 1] = mb_name_sand
+				biome_to_mb[biome_name][#biome_to_mb[biome_name] + 1] = mb_name_bottom
+			end
 
-	-- Angmar
-	minetest.register_biome({
-		name = "angmar",
-		node_dust = "default:snow",
-		node_top = "default:dirt_with_snow",
-		-- node_top = "default:dirt_with_snow",
-		depth_top = 1,
-		node_filler = "default:dirt",
-		depth_filler = 1,
-		-- node_stone = "default:ice",
-		-- node_water_top = "default:ice",
-		-- depth_water_top = ice_depth,
-		-- node_water = "default:water_source",
-		-- node_river_water = "default:river_water_source",
-		y_min = wl+4,
-		y_max = 31000,
-		heat_point = angmar_t,
-		humidity_point = angmar_h,
-	})
+			-- Top layer
+			minetest.register_biome({
+				name = mb_name_top,
+				node_dust = dust,
+				node_top = top,
+				depth_top = 1,
+				node_filler = filler,
+				depth_filler = 1,
+				node_stone = stone,
+				node_water_top = water_top,
+				depth_water_top = water_depth,
+				node_water = water,
+				node_river_water = river,
+				y_max = 31000,
+				y_min = wl+4,
+				heat_point = t,
+				humidity_point = h,
+			})
 
-	-- Snowplains
-	minetest.register_biome({
-		name = "snowplains",
-		-- node_dust = "default:snow",
-		-- node_top = "default:dirt_with_snow",
-		-- depth_top = 1,
-		node_filler = "default:dirt",
-		-- depth_filler = 3,
-		-- node_stone = "default:ice",
-		-- node_water_top = "default:ice",
-		-- depth_water_top = ice_depth,
-		-- node_water = "default:water_source",
-		-- node_river_water = "default:river_water_source",
-		y_min = wl+4,
-		y_max = 31000,
-		heat_point = snowplains_t,
-		humidity_point = snowplains_h,
-	})
+			-- Sand layer : wl +3, wl - 20
+			minetest.register_biome({
+				name = mb_name_sand,
+				node_dust = dust,
+				node_top = sand,
+				depth_top = 1,
+				node_filler = sand,
+				depth_filler = 1,
+				node_stone = stone,
+				node_water_top = water_top,
+				depth_water_top = water_depth,
+				node_water = water,
+				node_river_water = river,
+				y_max = wl+3,
+				y_min = wl-20,
+				heat_point = t,
+				humidity_point = h,
+			})
 
-	-- Trollshaws
-	minetest.register_biome({
-		name = "trollshaws",
-		-- node_dust = "default:snow",
-		-- node_top = "default:dirt_with_snow",
-		-- depth_top = 1,
-		node_filler = "default:dirt",
-		-- depth_filler = 3,
-		-- node_stone = "default:ice",
-		-- node_water_top = "default:ice",
-		-- depth_water_top = ice_depth,
-		-- node_water = "default:water_source",
-		-- node_river_water = "default:river_water_source",
-		y_min = wl+4,
-		y_max = 31000,
-		heat_point = trollshaws_t,
-		humidity_point = trollshaws_h,
-	})
+			-- Bottom layer
+			minetest.register_biome({
+				name = mb_name_bottom,
+				node_dust = dust,
+				node_top = top,
+				depth_top = 1,
+				node_filler = filler,
+				depth_filler = 1,
+				node_stone = stone,
+				node_water_top = water_top,
+				depth_water_top = water_depth,
+				node_water = water,
+				node_river_water = river,
+				y_min = wl-32,
+				y_max = wl-21,
+				heat_point = t,
+				humidity_point = h,
+			})
 
-	-- Mordor
-	minetest.register_biome({
-		name = "mordor",
-		-- node_top = "lottmapgen:mordor_stone",
-		-- depth_top = 1,
-		node_filler = "lottmapgen:mordor_stone",
-		-- depth_filler = 1,
-		-- node_stone = "lottmapgen:mordor_stone",
-		-- node_water_top = "lottmapgen:blacksource",
-		-- depth_water_top = 4,
-		-- node_water = "lottmapgen:blacksource",
-		-- node_river_water = "lottmapgen:black_river_source",
-		y_min = wl + 4,
-		y_max = 31000,
-		heat_point = mordor_t,
-		humidity_point = mordor_h,
-	})
+		-- clay:  wl - 1
+		minetest.register_biome({
+			name = "clay_"..h,
+			node_top = "default:clay",
+			depth_top = 1,
+			node_stone = stone,
+			node_water_top = water_top,
+			depth_water_top = water_depth,
+			node_water = water,
+			node_river_water = river,
+			y_min = wl-1,
+			y_max = wl-1,
+			heat_point = 50,
+			humidity_point = h,
+		})
 
-	-- Gondor, Rohan, Shire
-	minetest.register_biome({
-		name = "gondor",
-		--node_dust = "default:snow",
-		-- node_top = "lottmapgen:gondor_grass",
-		-- depth_top = 1,
-		node_filler = "default:dirt",
-		-- depth_filler = 3,
-		-- node_stone = "default:ice",
-		node_water_top = "default:water",
-		-- depth_water_top = 4,
-		node_water = "default:water_source",
-		node_river_water = "default:river_water_source",
-		y_min = wl+4,
-		y_max = 31000,
-		heat_point = middle_t,
-		humidity_point = middle_h,
-	})
+		-- salt:  wl - 5
+		minetest.register_biome({
+			name = "salt_"..h,
+			node_top = "lottores:mineral_salt",
+			depth_top = 1,
+			node_stone = stone,
+			node_water_top = water_top,
+			depth_water_top = water_depth,
+			node_water = water,
+			node_river_water = river,
+			y_min = wl-5,
+			y_max = wl-5,
+			heat_point = 50,
+			humidity_point = h,
+		})
 
-	-- Ithilien
-	minetest.register_biome({
-		name = "ithilien",
-		--node_dust = "default:snow",
-		-- node_top = "lottmapgen:ithilien_grass",
-		-- depth_top = 1,
-		node_filler = "default:dirt",
-		-- depth_filler = 3,
-		-- node_stone = "default:ice",
-		node_water_top = "default:water",
-		-- depth_water_top = 4,
-		node_water = "default:water_source",
-		node_river_water = "default:river_water_source",
-		y_min = wl+4,
-		y_max = 31000,
-		heat_point = ithilien_t,
-		humidity_point = ithilien_h,
-	})
+		-- pearl: wl - 20
+		minetest.register_biome({
+			name = "pearl_"..h,
+			node_top = "lottores:mineral_pearl",
+			depth_top = 1,
+			node_stone = stone,
+			node_water_top = water_top,
+			depth_water_top = water_depth,
+			node_water = water,
+			node_river_water = river,
+			y_min = wl-20,
+			y_max = wl-20,
+			heat_point = 50,
+			humidity_point = h,
+		})
 
-	-- Lorien
-	minetest.register_biome({
-		name = "lorien",
-		--node_dust = "default:snow",
-		-- node_top = "lottmapgen:lorien_grass",
-		-- depth_top = 1,
-		node_filler = "default:dirt",
-		-- depth_filler = 3,
-		-- node_stone = "default:ice",
-		node_water_top = "default:water",
-		-- depth_water_top = 4,
-		node_water = "default:water_source",
-		node_river_water = "default:river_water_source",
-		y_min = wl+4,
-		y_max = 31000,
-		heat_point = lorien_t,
-		humidity_point = lorien_h,
-	})
+	end  -- humid
 
-	-- Mirkwood, Ironhills, Dunlands
-	minetest.register_biome({
-		name = "mirkwood",
-		--node_dust = "default:snow",
-		-- node_top = "lottmapgen:mirkwood_grass",
-		-- depth_top = 1,
-		node_filler = "default:dirt",
-		-- depth_filler = 3,
-		-- node_stone = "default:ice",
-		node_water_top = "default:water",
-		-- depth_water_top = 4,
-		node_water = "default:water_source",
-		node_river_water = "default:river_water_source",
-		y_min = wl+4,
-		y_max = 31000,
-		heat_point = bottom_t,
-		humidity_point = bottom_h,
-	})
-
-	-- Fangorn
-	minetest.register_biome({
-		name = "fangorn",
-		--node_dust = "default:snow",
-		-- node_top = "lottmapgen:fangorn_grass",
-		-- depth_top = 1,
-		node_filler = "default:dirt",
-		-- depth_filler = 3,
-		-- node_stone = "default:ice",
-		node_water_top = "default:water",
-		-- depth_water_top = 4,
-		node_water = "default:water_source",
-		node_river_water = "default:river_water_source",
-		y_min = wl+4,
-		y_max = 31000,
-		heat_point = fangorn_t,
-		humidity_point = fangorn_h,
-	})
 end

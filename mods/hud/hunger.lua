@@ -27,7 +27,20 @@ function hud.item_eat(hunger_change, replace_with_item, poisen)
 			if h>30 then h=30 end
 			hud.hunger[name]=h
 			hud.set_hunger(user)
-			itemstack:add_item(replace_with_item) -- note: replace_with_item is optional
+			if replace_with_item then
+				if itemstack:is_empty() then
+					itemstack:add_item(replace_with_item)
+				else
+					local inv = user:get_inventory()
+					if inv:room_for_item("main", {name=replace_with_item}) then
+						inv:add_item("main", replace_with_item)
+					else
+						local pos = user:getpos()
+						pos.y = math.floor(pos.y + 0.5)
+						core.add_item(pos, replace_with_item)
+					end
+				end
+			end
 			--sound:eat
 			if poisen then
 				poisenp(1.0, poisen, 0, user)
@@ -65,7 +78,7 @@ if minetest.get_modpath("moretrees") ~= nil then
 end
 
 if minetest.get_modpath("dwarves") ~= nil then
-	overwrite("dwarves:beer", 2)
+	overwrite("dwarves:beer", 2, "vessels:drinking_glass")
 	overwrite("dwarves:apple_cider", 1)
 	overwrite("dwarves:midus", 2)
 	overwrite("dwarves:tequila", 2)

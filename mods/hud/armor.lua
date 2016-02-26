@@ -10,22 +10,20 @@ function hud.get_armor(player)
 		return
 	end
 	local name = player:get_player_name()
-	hud.set_armor(player, armor.def[name].state, armor.def[name].count)
+	armor:set_player_armor(player)
+	hud.set_armor(name, armor.def[name].state, armor.def[name].count, armor.def[name].level)
 end
 
-function hud.set_armor(player, ges_state, items)
-	if not player then return end
-
-	local max_items = 5
-	if items == 6 then max_items = items end
-	local max = max_items*65535
-	local lvl = max - ges_state
-	lvl = lvl/max
+function hud.set_armor(name, ges_state, items, armor_value)
 	if ges_state == 0 and items == 0 then
-		lvl = 0
+		hud.armor[name] = 0
+	else
+		local max_items = 5
+		if items == 6 then max_items = items end
+		local max = max_items*65535
+		local lvl = (max - ges_state)/max
+
+		hud.armor[name] = lvl*(items*(20/max_items))
+		hud.armor_value[name] = armor_value
 	end
-
-	hud.armor[player:get_player_name()] = lvl*(items*(20/max_items))
-
-
 end

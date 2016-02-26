@@ -364,35 +364,35 @@ minetest.register_craftitem( "lottpotion:wine", {
 	description = "Wine",
 	inventory_image = "lottpotion_wine.png",
 	wield_image = "lottpotion_wine.png",
-	on_use = minetest.item_eat(6),
+	on_use = minetest.item_eat(6, "vessels:drinking_glass"),
 })
 
 minetest.register_craftitem( "lottpotion:beer", {
 	description = "Beer",
 	inventory_image = "lottpotion_beer.png",
 	wield_image = "lottpotion_beer.png",
-	on_use = minetest.item_eat(6),
+	on_use = minetest.item_eat(6, "vessels:drinking_glass"),
 })
 
 minetest.register_craftitem( "lottpotion:ale", {
 	description = "Ale",
 	inventory_image = "lottpotion_ale.png",
 	wield_image = "lottpotion_ale.png",
-	on_use = minetest.item_eat(5),
+	on_use = minetest.item_eat(5, "vessels:drinking_glass"),
 })
 
 minetest.register_craftitem( "lottpotion:mead", {
 	description = "Mead",
 	inventory_image = "lottpotion_mead.png",
 	wield_image = "lottpotion_mead.png",
-	on_use = minetest.item_eat(5),
+	on_use = minetest.item_eat(5, "vessels:drinking_glass"),
 })
 
 minetest.register_craftitem( "lottpotion:cider", {
 	description = "Cider",
 	inventory_image = "lottpotion_cider.png",
 	wield_image = "lottpotion_cider.png",
-	on_use = minetest.item_eat(4),
+	on_use = minetest.item_eat(4, "vessels:drinking_glass"),
 })
 
 function lottpotion.can_dig(pos, player)

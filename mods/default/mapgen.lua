@@ -67,6 +67,28 @@ minetest.register_ore({
 
 minetest.register_ore({
 	ore_type       = "scatter",
+	ore            = "default:desert_stone_with_coal",
+	wherein        = "default:desert_stone",
+	clust_scarcity = 8*8*8,
+	clust_num_ores = 8,
+	clust_size     = 3,
+	y_min     = wl - 31000,
+	y_max     = wl + 64,
+})
+
+minetest.register_ore({
+	ore_type       = "scatter",
+	ore            = "default:desert_stone_with_coal",
+	wherein        = "default:desert_stone",
+	clust_scarcity = 24*24*24,
+	clust_num_ores = 27,
+	clust_size     = 6,
+	y_min     = wl - 31000,
+	y_max     = wl,
+})
+
+minetest.register_ore({
+	ore_type       = "scatter",
 	ore            = "default:stone_with_iron",
 	wherein        = "default:stone",
 	clust_scarcity = 12*12*12,
@@ -107,6 +129,28 @@ minetest.register_ore({
 	clust_size     = 6,
 	y_min     = wl - 31000,
 	y_max     = wl - 64,
+})
+
+minetest.register_ore({
+	ore_type       = "scatter",
+	ore            = "default:desert_stone_with_iron",
+	wherein        = "default:desert_stone",
+	clust_scarcity = 12*12*12,
+	clust_num_ores = 3,
+	clust_size     = 2,
+	y_min     = wl - 15,
+	y_max     = wl + 2,
+})
+
+minetest.register_ore({
+	ore_type       = "scatter",
+	ore            = "default:desert_stone_with_iron",
+	wherein        = "default:desert_stone",
+	clust_scarcity = 9*9*9,
+	clust_num_ores = 5,
+	clust_size     = 3,
+	y_min     = wl - 63,
+	y_max     = wl - 16,
 })
 
 minetest.register_ore({
@@ -195,6 +239,17 @@ minetest.register_ore({
 	clust_size     = 3,
 	y_min     = wl - 31000,
 	y_max     = wl - 64,
+})
+
+minetest.register_ore({
+	ore_type       = "scatter",
+	ore            = "default:desert_stone_with_copper",
+	wherein        = "default:desert_stone",
+	clust_scarcity = 12*12*12,
+	clust_num_ores = 4,
+	clust_size     = 3,
+	y_min     = wl - 63,
+	y_max     = wl - 16,
 })
 
 minetest.register_ore({

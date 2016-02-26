@@ -7,12 +7,14 @@ hud.air = {}
 hud.armor = {}
 hud.hunger_out = {}
 hud.armor_out = {}
+hud.armor_value = {}
 
 -- HUD item ids
 local health_hud = {}
 local hunger_hud = {}
 local air_hud = {}
 local armor_hud = {}
+local armor_val = {}
 local armor_hud_bg = {}
 
 -- default settings
@@ -145,6 +147,16 @@ end
 		alignment = {x=-1,y=-1},
 		offset = HUD_ARMOR_OFFSET,
 	})
+	armor_val[name] = player:hud_add({
+		hud_elem_type = "text",
+		position = HUD_ARMOR_POS,
+		scale = {x=18, y=8},
+		text = "0",
+		number = 0x666666,
+		alignment = {x=-1,y=1},
+		offset = {x=HUD_ARMOR_OFFSET.x-5, y=HUD_ARMOR_OFFSET.y-2},
+	})
+	hud.get_armor(player)
   end
  end
 end
@@ -176,13 +188,13 @@ local function update_hud(player)
 		player:hud_change(health_hud[name], "number", hp)
 	end
  --armor
-	local arm_out = tonumber(hud.armor_out[name])
-	if not arm_out then arm_out = 0 end
-	local arm = tonumber(hud.armor[name])
-	if not arm then arm = 0 end
+	local arm_out = tonumber(hud.armor_out[name]) or 0
+	local arm = tonumber(hud.armor[name]) or 0
+	local arm_val = tostring(hud.armor_value[name]) or "0"
 	if arm_out ~= arm then
 		hud.armor_out[name] = arm
 		player:hud_change(armor_hud[name], "number", arm)
+		player:hud_change(armor_val[name], "text", arm_val)
 		-- hide armor bar completely when there is none
 		if (not armor.def[name].count or armor.def[name].count == 0) and arm == 0 then
 		 player:hud_change(armor_hud_bg[name], "number", 0)

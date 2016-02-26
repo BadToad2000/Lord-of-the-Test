@@ -1644,10 +1644,11 @@ minetest.register_entity(name, {
 			punch_interval = tool_capabilities.full_punch_interval or 1.4
 		end
 
+		default.show_interval_indicator(hitter, punch_interval)
 		if weapon:get_definition()
 		and weapon:get_definition().tool_capabilities then
 
-			weapon:add_wear(math.floor((punch_interval / 75) * 9000))
+			weapon:add_wear(math.floor(punch_interval * 120))
 			hitter:set_wielded_item(weapon)
 		end
 

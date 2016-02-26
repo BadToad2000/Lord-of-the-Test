@@ -425,8 +425,10 @@ end
 minetest.register_on_punchplayer(function(player, hitter, time_from_last_punch, tool_capabilities)
 	local weapon = hitter:get_wielded_item()
 	if tool_capabilities ~= nil then
-		local wear = ((tool_capabilities.full_punch_interval or 1.4) / 75 ) * 9000
+		local punch_interval = tool_capabilities.full_punch_interval or 1.4
+		local wear = punch_interval * 120
 		weapon:add_wear(wear)
 		hitter:set_wielded_item(weapon)
+		default.show_interval_indicator(hitter, punch_interval)
 	end
 end)
