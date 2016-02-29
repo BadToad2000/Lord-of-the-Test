@@ -118,7 +118,7 @@ local get_formspec = function(player,page)
 			.."list[detached:"..player:get_player_name().."_bags;bag2;2.5,1;1,1;]"
 			.."list[detached:"..player:get_player_name().."_bags;bag3;4.5,1;1,1;]"
 			.."list[detached:"..player:get_player_name().."_bags;bag4;6.5,1;1,1;]"
-               .."background[5,5;1,1;gui_formbg.png;true]"
+			.."background[5,5;1,1;gui_formbg.png;true]"
 	end
 	for i=1,4 do
 		if page=="bag"..i then
@@ -129,7 +129,8 @@ local get_formspec = function(player,page)
 				.."button[2,0;2,0.5;bags;Bags]"
 				.."image[7,0;1,1;"..image.."]"
 				.."list[current_player;bag"..i.."contents;0,1;8,3;]"
-                .."background[5,5;1,1;gui_formbg.png;true]"
+				.."listring[]"
+				.."background[5,5;1,1;gui_formbg.png;true]"
 		end
 	end
 end
@@ -486,11 +487,36 @@ minetest.register_on_joinplayer(function(player)
 			player:get_inventory():set_stack(listname, index, nil)
 		end,
 		allow_put = function(inv, listname, index, stack, player)
-			if stack:get_definition().groups.bagslots then
-				return 1
-			else
-				return 0
+			local new_slots = stack:get_definition().groups.bagslots
+			if new_slots then
+				local player_inv = player:get_inventory()
+				local old_slots = player_inv:get_size(listname.."contents")
+
+				if not old_slots or new_slots >= old_slots then
+					return 1
+				else
+					-- using a smaller bag, make sure it fits
+					local old_list = player_inv:get_list(listname.."contents")
+					local new_list = {}
+					local slots_used = 0
+					local use_new_list = false
+
+					for i, v in ipairs(old_list) do
+						if v and not v:is_empty() then
+							slots_used = slots_used + 1
+							use_new_list = i > new_slots
+							new_list[slots_used] = v
+						end
+					end
+					if new_slots >= slots_used then
+						if use_new_list then
+							player_inv:set_list(listname.."contents", new_list)
+						end
+						return 1
+					end
+				end
 			end
+			return 0
 		end,
 		allow_take = function(inv, listname, index, stack, player)
 			if player:get_inventory():is_empty(listname.."contents")==true then

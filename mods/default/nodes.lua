@@ -159,7 +159,7 @@ minetest.register_node("default:dirt", {
 minetest.register_abm({
 	nodenames = {"default:dirt"},
 	interval = 2,
-	chance = 200,
+	chance = 20,
 	action = function(pos, node)
 		local above = {x=pos.x, y=pos.y+1, z=pos.z}
 		local name = minetest.get_node(above).name

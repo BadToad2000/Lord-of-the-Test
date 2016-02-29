@@ -24,7 +24,7 @@ local LORAN = -0.4
 local PAPCHA = 3 -- Papyrus
 local DUGCHA = 5 -- Dune grass
 local biome_blend = minetest.setting_getbool("biome_blend")
-local use_register_biome = minetest.setting_getbool("use_register_biome") or true
+local use_register_biome = minetest.setting_getbool("use_register_biome") and false
 
 --Rarity for Trees
 

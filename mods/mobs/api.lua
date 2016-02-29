@@ -1644,7 +1644,10 @@ minetest.register_entity(name, {
 			punch_interval = tool_capabilities.full_punch_interval or 1.4
 		end
 
-		default.show_interval_indicator(hitter, punch_interval)
+		if hitter:is_player() then
+			default.show_interval_indicator(hitter, punch_interval)
+		end
+
 		if weapon:get_definition()
 		and weapon:get_definition().tool_capabilities then
 

@@ -204,16 +204,15 @@ minetest.register_globalstep(function(dtime)
 end)
 
 function default.show_interval_indicator(player, punch_interval)
-	if not player:is_player() then return end
-
 	local first_screen = player:hud_add({
 		hud_elem_type = "statbar",
-		position = {x=0.462, y=0.450},
-		scale = {x=1, y=1},
 		text = "crosshair.png^[colorize:red:255",
 		number = 2,
+		position = {x=0.5, y=0.5},
 		alignment = {x=0,y=0},
-		offset = {x=0, y=0},
+		scale = {x=1, y=1},
+		offset = {x=-30, y=-30},
+		size = {x=60, y=60},
 		})
 	minetest.after(punch_interval, function()
 		player:hud_remove(first_screen)

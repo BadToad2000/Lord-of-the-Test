@@ -83,6 +83,7 @@ end
 		number = 20,
 		alignment = {x=-1,y=-1},
 		offset = HUD_HUNGER_OFFSET,
+		size = {x=16, y=16}
 	 })
 	local h = hud.hunger[name]
 	if h == nil or h > 20 then h = 20 end
@@ -94,6 +95,7 @@ end
 		number = h,
 		alignment = {x=-1,y=-1},
 		offset = HUD_HUNGER_OFFSET,
+		size = {x=16, y=16}
 	 })
 	end
  --health
@@ -105,6 +107,7 @@ end
 		number = 20,
 		alignment = {x=-1,y=-1},
 		offset = HUD_HEALTH_OFFSET,
+		size = {x=16, y=16}
 	})
 	health_hud[name] = player:hud_add({
 		hud_elem_type = "statbar",
@@ -114,6 +117,7 @@ end
 		number = player:get_hp(),
 		alignment = {x=-1,y=-1},
 		offset = HUD_HEALTH_OFFSET,
+		size = {x=16, y=16}
 	})
 
  --air
@@ -125,6 +129,7 @@ end
 		number = 0,
 		alignment = {x=-1,y=-1},
 		offset = HUD_AIR_OFFSET,
+		size = {x=16, y=16}
 	})
 
  --armor
@@ -137,6 +142,7 @@ end
 		number = 0,
 		alignment = {x=-1,y=-1},
 		offset = HUD_ARMOR_OFFSET,
+		size = {x=16, y=16}
 	})
 	armor_hud[name] = player:hud_add({
 		hud_elem_type = "statbar",
@@ -146,6 +152,7 @@ end
 		number = 0,
 		alignment = {x=-1,y=-1},
 		offset = HUD_ARMOR_OFFSET,
+		size = {x=16, y=16}
 	})
 	armor_val[name] = player:hud_add({
 		hud_elem_type = "text",
@@ -155,8 +162,8 @@ end
 		number = 0x666666,
 		alignment = {x=-1,y=1},
 		offset = {x=HUD_ARMOR_OFFSET.x-5, y=HUD_ARMOR_OFFSET.y-2},
+		size = {x=20, y=20}
 	})
-	hud.get_armor(player)
   end
  end
 end
@@ -256,6 +263,7 @@ minetest.register_on_joinplayer(function(player)
 		hide_builtin(player)
 		custom_hud(player)
 		if HUD_ENABLE_HUNGER then hud.set_hunger(player) end
+		hud.get_armor(player)
 	end)
 end)
 
